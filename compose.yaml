@@ -1,0 +1,22 @@
+services:
+  hakenhero:
+    build: .
+    volumes:
+      - .:/app
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mariadb
+    command: -S 0.0.0.0:8080 -t /app/public /app/public/index.php
+  mariadb:
+    image: mariadb:latest
+    environment:
+      MARIADB_USER: hakenhero
+      MARIADB_PASSWORD: hakenhero
+      MARIADB_DATABASE: hakenhero
+      MARIADB_ROOT_PASSWORD: admin
+
+    volumes:
+      - ./docker/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    ports:
+      - "3306:3306"

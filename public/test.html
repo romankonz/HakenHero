@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>HakenHero</title>
+</head>
+<body>
+
+<div class="max-w-md mx-auto bg-white shadow-lg rounded-lg overflow-hidden mt-16">
+    <div class="px-4 py-2">
+        <h1 class="text-gray-800 font-bold text-2xl uppercase">To-Do List</h1>
+    </div>
+    <form class="w-full max-w-sm mx-auto px-4 py-2">
+        <div class="flex items-center border-b-2 border-teal-500 py-2">
+            <input
+                    class="appearance-none bg-transparent border-none w-full text-gray-700 mr-3 py-1 px-2 leading-tight focus:outline-none"
+                    type="text" placeholder="Add a task" id="add-task">
+            <button id="submit"
+                    class="flex-shrink-0 bg-teal-500 hover:bg-teal-700 border-teal-500 hover:border-teal-700 text-sm border-4 text-white py-1 px-2 rounded"
+                    type="button">
+                Add
+            </button>
+        </div>
+    </form>
+    <ul id="tasks" class="divide-y divide-gray-200 px-4">
+
+
+    </ul>
+</div>
+
+<script>
+    const tasksUrl = "http://localhost:8080/api/tasks/";
+    const newTaskInput = document.querySelector("#add-task");
+    let submitButton = document.querySelector("#submit");
+
+    async function getTasks() {
+        try {
+            const response = await fetch(tasksUrl);
+            const responseData = await response.json();
+            console.log(responseData);
+            return responseData;
+
+        } catch (error) {
+            console.error("Error:", error);
+        }
+    }
+
+    async function getTask(id) {
+        try {
+            const response = await fetch(`${tasksUrl}${id}/`);
+            const responseData = await response.json();
+            console.log(responseData);
+            return responseData;
+
+        } catch (error) {
+            console.error("Error:", error);
+        }
+    }
+
+    async function createTask(data) {
+        try {
+            // send POST request with user input as the req body
+            const response = await fetch(tasksUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(data),
+            });
+
+            console.log("Success:", response.status);
+        } catch (error) {
+            console.error("Error:", error);
+        }
+    }
+
+    async function showTasks() {
+        const todoList = await getTasks();
+        let todoListContainer = document.querySelector("#tasks");
+        todoListContainer.innerHTML = ""
+        todoList.forEach((todo) => {
+            todoListContainer.innerHTML += `
+        <li class="py-4">
+            <div class="flex items-center">
+                <input id="todo-${todo.id}" name="${todo.description}" type="checkbox"
+                       class="task-entry h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded" ${todo.is_done ? 'checked' : ''}
+                       data-id="${todo.id}">
+                <label for="todo1" class="ml-3 block text-gray-900">
+                    <span class="text-lg font-medium">${todo.description}</span>
+                </label>
+            </div>
+        </li>
+
+        `;
+            document.getElementById(`todo-${todo.id}`).checked = todo.is_done;
+        });
+
+        let checkboxes = document.querySelectorAll(".task-entry");
+        checkboxes.forEach((checkbox) => {
+            checkbox.addEventListener("change", (event) => toggleTaskStatus(event));
+        });
+    }
+
+    async function updateTodo(id, data) {
+        try {
+            const response = await fetch(`${tasksUrl}${id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(data),
+            });
+            const result = await response.json();
+            console.log("Success:", result);
+        } catch (error) {
+            console.error("Error:", error);
+        }
+    }
+
+    async function addTask() {
+        const data = {description: newTaskInput.value};
+        await createTask(data);
+        showTasks();
+        newTaskInput.value = "";
+    }
+
+    async function toggleTaskStatus(event) {
+        const id = event.target.getAttribute("data-id");
+        let task = await getTask(id);
+        console.log(task)
+        task.is_done = !task.is_done;
+        await updateTodo(id, task);
+        await showTasks()
+    }
+
+    console.log(document.querySelector("#submit"));
+    submitButton.addEventListener("click", () => addTask());
+
+
+    showTasks();
+
+</script>
+</body>
+</html>
